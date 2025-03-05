@@ -1,28 +1,12 @@
 import { OnNameLookupHandler, OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { createPublicClient, http, getContract } from 'viem';
-
-// Define the Sonic chain
-const sonic = {
-  id: 146,
-  name: 'Sonic',
-  network: 'sonic',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Sonic',
-    symbol: 'S',
-  },
-  rpcUrls: {
-    public: { http: ['https://rpc.soniclabs.com'] },
-    default: { http: ['https://rpc.soniclabs.com'] },
-  },
-};
+import { sonic } from 'viem/chains'
 
 // SNS Contract Addresses
 const SNS_RESOLVER_ADDRESS = '0x90DB11399F3577BeFbF5B8E094BcaD35DA348Fc9';
-const SNS_REGISTRAR_ADDRESS = '0xc50DBB6F0BAab19C6D0473B225f7F58e4a2d440b';
 const SNS_REGISTRY_ADDRESS = '0x3D9D5ACc7dBACf1662Bc6D1ea8479F88B90b3cfb';
 
-// Simplified Resolver ABI - Only the functions we need
+// Simplified Resolver ABI
 const RESOLVER_ABI = [
   {
     inputs: [{ internalType: 'uint256', name: 'tokenId', type: 'uint256' }],
@@ -44,10 +28,10 @@ const RESOLVER_ABI = [
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
-  }
+  },
 ];
 
-// Simplified Registry ABI - Only the functions we need
+// Simplified Registry ABI
 const REGISTRY_ABI = [
   {
     inputs: [{ internalType: 'string', name: '', type: 'string' }],
@@ -62,7 +46,7 @@ const REGISTRY_ABI = [
     outputs: [{ internalType: 'string', name: '', type: 'string' }],
     stateMutability: 'view',
     type: 'function',
-  }
+  },
 ];
 
 /**
@@ -73,9 +57,12 @@ const formatDomainName = (name: string): string => {
   return name.endsWith('.s') ? name : `${name}.s`;
 };
 
-export const onNameLookup: OnNameLookupHandler = async (request: { domain: any; }) => {
-  let { domain } = request;
+export const onNameLookup: OnNameLookupHandler = async (args) => {
+  if ('address' in args) {
+    return null;
+  }
 
+  const { domain } = args;
   if (!domain) {
     return null;
   }
@@ -87,7 +74,6 @@ export const onNameLookup: OnNameLookupHandler = async (request: { domain: any; 
 
   try {
     // Extract the name without the .s extension
-    // Your resolver already returns the name without .s
     const name = domain.replace('.s', '');
 
     // Create a public client
@@ -98,13 +84,18 @@ export const onNameLookup: OnNameLookupHandler = async (request: { domain: any; 
 
     // Create registry contract instance
     const registryContract = getContract({
-      address: SNS_REGISTRY_ADDRESS,
+      address: SNS_REGISTRY_ADDRESS as `0x${string}`,
       abi: REGISTRY_ABI,
       client,
     });
 
     // Get tokenId directly from registry using nameToTokenId mapping
-    const tokenId = await registryContract.read.nameToTokenId([name]);
+    const nameToTokenId = (registryContract.read as any).nameToTokenId;
+    if (!nameToTokenId) {
+      throw new Error('nameToTokenId function not found on registry contract');
+    }
+    
+    const tokenId = await nameToTokenId([name]);
     
     // If tokenId is 0, the name doesn't exist
     if (tokenId === 0n) {
@@ -113,13 +104,18 @@ export const onNameLookup: OnNameLookupHandler = async (request: { domain: any; 
 
     // Create resolver contract instance
     const resolverContract = getContract({
-      address: SNS_RESOLVER_ADDRESS,
+      address: SNS_RESOLVER_ADDRESS as `0x${string}`,
       abi: RESOLVER_ABI,
       client,
     });
 
+    const resolveAddress = (resolverContract.read as any).resolveAddress;
+    if (!resolveAddress) {
+      throw new Error('resolveAddress function not found on resolver contract');
+    }
+
     // Call resolveAddress with the tokenId
-    const resolvedAddress = await resolverContract.read.resolveAddress([tokenId]);
+    const resolvedAddress = await resolveAddress([tokenId]);
 
     if (!resolvedAddress || resolvedAddress === '0x0000000000000000000000000000000000000000') {
       return null;
@@ -147,7 +143,8 @@ export const onNameLookup: OnNameLookupHandler = async (request: { domain: any; 
 export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
   switch (request.method) {
     case 'reverseLookup': {
-      const { address } = request.params as { address: string };
+      const params = request.params as { address?: string } | undefined;
+      const address = params?.address;
       
       if (!address || !address.startsWith('0x')) {
         throw new Error('Invalid Ethereum address provided');
@@ -162,19 +159,24 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
         
         // Create a contract instance
         const resolverContract = getContract({
-          address: SNS_RESOLVER_ADDRESS,
+          address: SNS_RESOLVER_ADDRESS as `0x${string}`,
           abi: RESOLVER_ABI,
           client,
         });
         
+        const reverseLookup = (resolverContract.read as any).reverseLookup;
+        if (!reverseLookup) {
+          throw new Error('reverseLookup function not found on resolver contract');
+        }
+        
         // Call the reverseLookup function to get the name
-        const name = await resolverContract.read.reverseLookup([address]);
+        const name = await reverseLookup([address as `0x${string}`]);
         
         // If no name found, return null
         if (!name) return null;
         
         // Return the name with .s TLD
-        return formatDomainName(name);
+        return formatDomainName(name as string);
       } catch (error) {
         console.error('Error performing reverse lookup:', error);
         return null;
@@ -182,7 +184,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
     }
     
     case 'getTokenIdForName': {
-      const { name } = request.params as { name: string };
+      const params = request.params as { name?: string } | undefined;
+      const name = params?.name;
       
       if (!name) {
         throw new Error('Name is required');
@@ -197,13 +200,18 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
         
         // Get tokenId from name via Registry contract
         const registryContract = getContract({
-          address: SNS_REGISTRY_ADDRESS,
+          address: SNS_REGISTRY_ADDRESS as `0x${string}`,
           abi: REGISTRY_ABI,
           client,
         });
         
+        const nameToTokenId = (registryContract.read as any).nameToTokenId;
+        if (!nameToTokenId) {
+          throw new Error('nameToTokenId function not found on registry contract');
+        }
+        
         const cleanName = name.replace('.s', '');
-        const tokenId = await registryContract.read.nameToTokenId([cleanName]);
+        const tokenId = await nameToTokenId([cleanName]);
         
         // If tokenId is 0, the name doesn't exist
         if (tokenId === 0n) {
@@ -218,9 +226,10 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
     }
     
     case 'getNameForTokenId': {
-      const { tokenId } = request.params as { tokenId: string };
+      const params = request.params as { tokenId?: string } | undefined;
+      const tokenIdStr = params?.tokenId;
       
-      if (!tokenId) {
+      if (!tokenIdStr) {
         throw new Error('TokenId is required');
       }
       
@@ -233,19 +242,24 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
         
         // Get name from tokenId via Registry contract
         const registryContract = getContract({
-          address: SNS_REGISTRY_ADDRESS,
+          address: SNS_REGISTRY_ADDRESS as `0x${string}`,
           abi: REGISTRY_ABI,
           client,
         });
         
-        const name = await registryContract.read.tokenIdToName([BigInt(tokenId)]);
+        const tokenIdToName = (registryContract.read as any).tokenIdToName;
+        if (!tokenIdToName) {
+          throw new Error('tokenIdToName function not found on registry contract');
+        }
+        
+        const name = await tokenIdToName([BigInt(tokenIdStr)]);
         
         // If name is empty, the tokenId doesn't exist
         if (!name) {
           return null;
         }
         
-        return { name: formatDomainName(name) };
+        return { name: formatDomainName(name as string) };
       } catch (error) {
         console.error('Error getting name for tokenId:', error);
         return null;

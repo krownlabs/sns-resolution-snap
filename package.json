@@ -1,10 +1,10 @@
 {
   "name": "sonic_resolver",
   "version": "1.0.0",
-  "description": "This plugin includes the npm package to install as snap on metamask to resolve SNS - Sonic Name Service",
+  "description": "This plugin includes the npm package to install as snap on metamask to resolve Sonic Name Service",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YourUsername/sns-resolution-snap.git"
+    "url": "git+https://github.com/krownlabs/sns-resolution-snap.git"
   },
   "license": "MIT",
   "main": "./dist/bundle.js",
