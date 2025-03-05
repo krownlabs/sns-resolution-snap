@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "description": "SNS - Sonic Name Service Resolver",
+  "proposedName": "Sonic Name Service Resolver",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YourUsername/sns-resolution-snap.git"
+  },
+  "source": {
+    "shasum": "wM1sK8GSMc8sGcqvRi1A1KyoWIXoSlvg+zVYvRqNJaw=",
+    "location": {
+      "npm": {
+        "filePath": "dist/bundle.js",
+        "packageName": "sonic_resolver",
+        "registry": "https://registry.npmjs.org/",
+        "iconPath": "images/logo.svg"
+      }
+    }
+  },
+  "initialConnections": {
+    "https://www.yourdomain.com/": {}
+  },
+  "initialPermissions": {
+    "endowment:network-access": {},
+    "endowment:rpc": {
+      "dapps": true,
+      "snaps": false
+    },
+    "endowment:name-lookup": {
+      "chains": ["eip155:146"],
+      "matchers": {
+        "tlds": ["s"]
+      }
+    }
+  },
+  "platformVersion": "6.19.0",
+  "manifestVersion": "0.1"
+}

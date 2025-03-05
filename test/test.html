@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SNS Snap Test</title>
+</head>
+<body>
+    <h1>Sonic Name Service Snap Test</h1>
+    
+    <button id="connectBtn">Connect to SNS Snap</button><br><br>
+    
+    <input id="domainInput" placeholder="Enter domain (e.g., example.s)">
+    <button id="resolveBtn">Resolve Domain</button>
+    <div id="resolveResult"></div><br>
+    
+    <input id="addressInput" placeholder="Enter Ethereum address">
+    <button id="reverseLookupBtn">Reverse Lookup</button>
+    <div id="reverseLookupResult"></div><br>
+    
+    <input id="tokenIdInput" placeholder="Enter Token ID">
+    <button id="getNameBtn">Get Name from TokenId</button>
+    <div id="nameResult"></div>
+    
+    <script>
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_requestSnaps',
+                    params: {
+                        'local:http://localhost:8080': {}
+                    }
+                });
+                alert('Successfully connected to SNS Snap!');
+            } catch (err) {
+                console.error(err);
+                alert('Error connecting to snap: ' + err.message);
+            }
+        });
+        
+        document.getElementById('resolveBtn').addEventListener('click', async () => {
+            const domain = document.getElementById('domainInput').value;
+            try {
+                const result = await window.ethereum.request({
+                    method: 'wallet_invokeSnap',
+                    params: {
+                        snapId: 'local:http://localhost:8080',
+                        request: {
+                            method: 'getTokenIdForName',
+                            params: {
+                                name: domain
+                            }
+                        }
+                    }
+                });
+                document.getElementById('resolveResult').innerText = 'TokenId: ' + 
+                    (result ? JSON.stringify(result) : 'Not found');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('resolveResult').innerText = 'Error: ' + err.message;
+            }
+        });
+        
+        document.getElementById('reverseLookupBtn').addEventListener('click', async () => {
+            const address = document.getElementById('addressInput').value;
+            try {
+                const result = await window.ethereum.request({
+                    method: 'wallet_invokeSnap',
+                    params: {
+                        snapId: 'local:http://localhost:8080',
+                        request: {
+                            method: 'reverseLookup',
+                            params: {
+                                address: address
+                            }
+                        }
+                    }
+                });
+                document.getElementById('reverseLookupResult').innerText = 'Name: ' + 
+                    (result || 'Not found');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('reverseLookupResult').innerText = 'Error: ' + err.message;
+            }
+        });
+        
+        document.getElementById('getNameBtn').addEventListener('click', async () => {
+            const tokenId = document.getElementById('tokenIdInput').value;
+            try {
+                const result = await window.ethereum.request({
+                    method: 'wallet_invokeSnap',
+                    params: {
+                        snapId: 'local:http://localhost:8080',
+                        request: {
+                            method: 'getNameForTokenId',
+                            params: {
+                                tokenId: tokenId
+                            }
+                        }
+                    }
+                });
+                document.getElementById('nameResult').innerText = 'Name: ' + 
+                    (result ? JSON.stringify(result) : 'Not found');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('nameResult').innerText = 'Error: ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
