@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sonic Name Service Resolver",
   "proposedName": "Sonic Name Service Resolver",
   "repository": {
@@ -7,7 +7,7 @@
     "url": "git+https://github.com/krownlabs/sns-resolution-snap.git"
   },
   "source": {
-    "shasum": "SlM2y4KEDHXPrfwjYY86nSVARPXK1jk0mnPy6V27kns=",
+    "shasum": "4iJUL7wlEdt3Nwv/YSI5UU3S8RIM156Njn/BWbVukIA=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -16,9 +16,6 @@
         "iconPath": "images/logo.svg"
       }
     }
-  },
-  "initialConnections": {
-    "https://www.sonicname.services/": {}
   },
   "initialPermissions": {
     "endowment:network-access": {},
@@ -33,6 +30,6 @@
       }
     }
   },
-  "platformVersion": "6.19.0",
+  "platformVersion": "6.17.0",
   "manifestVersion": "0.1"
 }

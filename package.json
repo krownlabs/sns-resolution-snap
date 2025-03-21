@@ -1,7 +1,7 @@
 {
   "name": "sonic_resolver",
-  "version": "1.0.0",
-  "description": "This plugin includes the npm package to install as snap on metamask to resolve Sonic Name Service",
+  "version": "1.0.1",
+  "description": "This plugin includes the npm package to install as snap on MetaMask to resolve Sonic Name Service",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/krownlabs/sns-resolution-snap.git"
@@ -28,7 +28,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@metamask/snaps-sdk": "^6.19.0",
+    "@metamask/snaps-sdk": "6.17.0",
     "viem": "^2.22.8"
   },
   "devDependencies": {
@@ -48,7 +48,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "~2.31.0",
     "eslint-plugin-jest": "^27.1.5",
-    "eslint-plugin-jsdoc": "^41.1.2",
+    "eslint-plugin-jsdoc": "50.6.8",
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
